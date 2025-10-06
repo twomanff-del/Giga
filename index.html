@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>GigaPub Earning App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #388E3C;
+            --secondary-color: #4CAF50;
+            --light-green: #E8F5E9;
+            --background-color: #F0F4F0;
+            --text-color: #333;
+            --text-light: #555;
+            --card-bg: #FFFFFF;
+            --border-radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #app-container {
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .app-header {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: var(--background-color);
+        }
+        .profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ccc;
+            margin-right: 12px;
+            object-fit: cover;
+        }
+        .user-info .user-name {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .user-info .user-balance {
+            font-size: 0.9em;
+            color: var(--text-light);
+        }
+
+        /* Main Content & Pages */
+        main {
+            flex-grow: 1;
+            padding: 0 15px 80px 15px; /* Padding for nav bar */
+        }
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .page.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Card styles */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .card-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .card-subtitle {
+            color: var(--text-light);
+            margin-bottom: 20px;
+        }
+
+        /* Button Styles */
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            gap: 8px;
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .btn:active {
+            transform: scale(0.97);
+            opacity: 0.9;
+        }
+        .btn-secondary {
+            background-color: var(--light-green);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        /* Specific Page Styles */
+        /* Home */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-item {
+            background-color: var(--light-green);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-item .value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .stat-item .label {
+            font-size: 0.9em;
+            color: var(--text-light);
+        }
+        .update-notice {
+            position: relative;
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        .update-notice h4 { margin-bottom: 10px; }
+        .update-notice ul { list-style: none; padding-left: 5px; }
+        .update-notice li { margin-bottom: 5px; }
+        .update-notice i { color: var(--secondary-color); margin-right: 8px; }
+        .close-notice {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        /* Earn */
+        .task-progress {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            color: var(--text-light);
+            margin-bottom: 15px;
+        }
+        .bonus-task {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .bonus-task:last-child { border-bottom: none; }
+        .bonus-task .info { font-weight: 500; }
+        .bonus-task .reward { color: var(--primary-color); font-weight: 600; }
+        .bonus-task .actions button {
+            padding: 6px 12px;
+            font-size: 0.8em;
+            border-radius: 8px;
+            margin-left: 5px;
+        }
+
+        /* Withdraw & Profile */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-light);
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            background-color: #fafafa;
+        }
+        .profile-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .profile-header .profile-pic {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 10px auto;
+        }
+        .profile-header .user-name { font-size: 1.4em; }
+        .profile-header .user-handle { color: #888; }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: var(--light-green);
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+        .info-row span:first-child { font-weight: 500; }
+        .info-row span:last-child { font-weight: 600; color: var(--primary-color); }
+        
+        .profile-page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        #settings-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            color: var(--text-light);
+            cursor: pointer;
+        }
+
+        /* Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #aaa;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-grow: 1;
+        }
+        .nav-item.active, .nav-item:active {
+            color: var(--primary-color);
+            transform: translateY(-3px);
+        }
+        .nav-item i { font-size: 1.4em; margin-bottom: 4px; }
+        .nav-item span { font-size: 0.75em; font-weight: 500; }
+
+        /* Admin Panel */
+        .admin-panel-title {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <header class="app-header">
+            <img id="header-profile-pic" class="profile-pic" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzgwODA4MCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgM2MxLjY2IDAgMyAxLjM0IDMgMyAwIDEuMDktLjU5IDIuMDQtMS40NyAyLjU2QzE0LjQ2IDEwLjY5IDE2IDEyLjYyIDE2IDE1SDhjMC0yLjM4IDEuNTQtNC4zMSAzLjQ3LTQuOTRjLS44Ny0uNTItMS40Ny0xLjQ3LTEuNDctMi41NkM5IDE2LjM0IDEwLjM0IDE1IDEyIDE1em0wIDE0Yy0yLjcgMC01LTEuMjktNi41LTQuMjJDNi44MSAxNi42NyA5LjI1IDE1IDEyIDE1czUuMTkgMS42NyA2LjUgMy43OEMxNyAxNy43MSAxNC43IDE5IDEyIDE5eiIvPjwvc3ZnPg==" alt="User">
+            <div class="user-info">
+                <div id="header-user-name" class="user-name">Loading...</div>
+                <div id="header-user-balance" class="user-balance">BDT 0.00</div>
+            </div>
+        </header>
+
+        <main>
+            <div id="home-page" class="page active">
+                <div class="card">
+                    <h1 class="card-title">Welcome, <span id="home-user-name">User</span>!</h1>
+                    <p class="card-subtitle">A new day brings new opportunities to grow your earnings.</p>
+                    <button class="btn btn-primary" id="start-growing-btn"><i class="fa-solid fa-bell"></i> Start Growing</button>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div id="home-total-earnings" class="value">0.00</div>
+                        <div class="label">Total Earnings</div>
+                    </div>
+                    <div class="stat-item">
+                        <div id="home-ads-watched" class="value">0</div>
+                        <div class="label">Ads Watched</div>
+                    </div>
+                </div>
+
+                 <div class="update-notice" id="update-notice-card">
+                    <button class="close-notice" id="close-notice-btn">&times;</button>
+                    <h4>🚀 Smart Work, Smart Earn System</h4>
+                    <p style="font-size:0.9em; margin-bottom: 10px;">Welcome💐</p>
+                    <ul>
+                        <li><i class="fa-solid fa-check"></i>💥প্রস্তুত তো নিজের ইনকাম বাড়াতে? 💸</li>
+                        <li><i class="fa-solid fa-check"></i>নিয়ম মেনে কাজ করুন — টাকা পাবেন আরও বেশি ⚡</li>
+                        <li><i class="fa-solid fa-check"></i>দ্রুত, নিরাপদ ও আনলিমিটেড এক্সেস আপনার জন্যই 🔥</li>
+                        <li><i class="fa-solid fa-check"></i>আপনার বন্ধুদের সাথে শেয়ার করুন 🎉</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="earn-page" class="page">
+                 <h2 style="margin-bottom: 20px;">Earning Field</h2>
+                <div class="card">
+                    <h3 style="margin-bottom: 10px;">Ad Tasks</h3>
+                    <p class="card-subtitle" style="margin-bottom: 10px;">Watch ads to cultivate your earnings.</p>
+                    <div class="task-progress">
+                        <span>Completed: <span id="ads-completed">0</span></span>
+                        <span>Remaining: <span id="ads-remaining">40</span></span>
+                    </div>
+                    <button class="btn btn-primary" id="watch-ad-btn"><i class="fa-solid fa-play"></i> Watch Ad</button>
+                </div>
+                <div class="card">
+                    <h3 style="margin-bottom: 10px;">Bonus Tasks</h3>
+                     <div class="bonus-task">
+                        <div class="info">
+                            <div>Joint Channal</div>
+                            <div class="reward">BDT <span id="channel-bonus-amount">0.10</span></div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn btn-secondary" id="join-channel-btn">Join</button>
+                        </div>
+                    </div>
+                    <div class="bonus-task">
+                         <div class="info">
+                            <div>Gurup Joint</div>
+                            <div class="reward">BDT <span id="group-bonus-amount">0.10</span></div>
+                        </div>
+                         <div class="actions">
+                            <button class="btn btn-secondary" id="join-group-btn">Join</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="referral-page" class="page">
+                <h2 style="margin-bottom: 20px;">Referral Garden</h2>
+                <div class="card" style="text-align:center;">
+                    <i class="fa-solid fa-users" style="font-size: 3em; color: var(--primary-color); margin-bottom: 15px;"></i>
+                    <p class="card-subtitle">Invite your friends to join our garden. You'll earn rewards when they start growing!</p>
+                    <div style="display: flex; margin-bottom: 15px;">
+                        <input type="text" id="referral-link-input" readonly style="border-top-right-radius: 0; border-bottom-right-radius: 0; text-align: center;">
+                        <button id="copy-referral-btn" class="btn btn-primary" style="width: auto; padding: 0 15px; border-radius: 0 8px 8px 0;"><i class="fa-solid fa-copy"></i></button>
+                    </div>
+                    <button id="share-invitation-btn" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Share Invitation</button>
+                </div>
+                 <div class="card">
+                    <h3>Total Referrals</h3>
+                    <p id="total-referrals-display" style="font-size: 2em; font-weight: bold; color: var(--primary-color); text-align: center; margin-top: 10px;">0</p>
+                </div>
+            </div>
+
+            <div id="withdraw-page" class="page">
+                <h2 style="margin-bottom: 20px;">Harvest Your Earnings</h2>
+                <div class="card">
+                    <div class="form-group">
+                        <label>Available Balance</label>
+                        <input type="text" id="withdraw-balance" value="BDT 0.00" readonly style="background-color: #eee; font-weight: bold; color: var(--primary-color);">
+                    </div>
+                    <div class="form-group">
+                        <label for="withdrawal-method">Withdrawal Method</label>
+                        <select id="withdrawal-method">
+                            <option value="Bkash">Bkash</option>
+                            <option value="Recharge">Recharge</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="withdrawal-amount">Amount</label>
+                        <input type="number" id="withdrawal-amount" placeholder="Enter amount">
+                    </div>
+                     <div class="form-group">
+                        <label for="withdrawal-account">Account Number</label>
+                        <input type="text" id="withdrawal-account" placeholder="Enter your account number">
+                    </div>
+                    <button class="btn btn-primary" id="request-withdrawal-btn"><i class="fa-solid fa-paper-plane"></i> Request Withdrawal</button>
+                </div>
+            </div>
+
+            <div id="profile-page" class="page">
+                <div class="profile-page-header">
+                     <h2 >Profile</h2>
+                     <button id="settings-btn"><i class="fa-solid fa-gear"></i></button>
+                </div>
+                <div class="card">
+                    <div class="profile-header">
+                        <img id="profile-page-pic" class="profile-pic" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzgwODA4MCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgM2MxLjY2IDAgMyAxLjM0IDMgMyAwIDEuMDktLjU5IDIuMDQtMS40NyAyLjU2QzE0LjQ2IDEwLjY5IDE2IDEyLjYyIDE2IDE1SDhjMC0yLjM4IDEuNTQtNC4zMSAzLjQ3LTQuOTRjLS44Ny0uNTItMS40Ny0xLjQ3LTEuNDctMi41NkM5IDE2LjM0IDEwLjM0IDE1IDEyIDE1em0wIDE0Yy0yLjcgMC01LTEuMjktNi41LTQuMjJDNi44MSAxNi42NyA5LjI1IDE1IDEyIDE1czUuMTkgMS42NyA2LjUgMy43OEMxNyAxNy43MSAxNC43IDE5IDEyIDE5eiIvPjwvc3ZnPg==" alt="User">
+                        <div id="profile-page-name" class="user-name">User Name</div>
+                        <div id="profile-page-handle" class="user-handle">@username</div>
+                    </div>
+                    <div class="info-row">
+                        <span>Balance</span>
+                        <span id="profile-balance">BDT 0.00</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Total Earnings</span>
+                        <span id="profile-total-earnings">BDT 0.00</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Ads Watched</span>
+                        <span id="profile-ads-watched">0</span>
+                    </div>
+                     <div class="info-row">
+                        <span>Total Referrals</span>
+                        <span id="profile-total-referrals">0</span>
+                    </div>
+                </div>
+                 <button class="btn btn-secondary" id="contact-dev-btn"><i class="fa-solid fa-headphones"></i> Contact Developer</button>
+            </div>
+            
+            <div id="admin-login-page" class="page">
+                <h2 style="text-align: center; margin-bottom: 20px;">Admin Access</h2>
+                <div class="card">
+                    <div class="form-group">
+                        <label for="admin-password">Password</label>
+                        <input type="password" id="admin-password" placeholder="Enter admin password">
+                    </div>
+                    <button class="btn btn-primary" id="admin-login-btn">Login</button>
+                </div>
+            </div>
+
+            <div id="admin-panel-page" class="page">
+                <h2 class="admin-panel-title">Admin Control Panel</h2>
+                <div class="card">
+                    <div class="form-group">
+                        <label for="admin-task-limit">Daily Ad Limit</label>
+                        <input type="number" id="admin-task-limit">
+                    </div>
+                    <div class="form-group">
+                        <label for="admin-task-reward">Ad Reward (BDT)</label>
+                        <input type="number" step="0.01" id="admin-task-reward">
+                    </div>
+                    <div class="form-group">
+                        <label for="admin-min-payout">Min Payout (BDT)</label>
+                        <input type="number" id="admin-min-payout">
+                    </div>
+                     <div class="form-group">
+                        <label for="admin-max-payout">Max Payout (BDT)</label>
+                        <input type="number" id="admin-max-payout">
+                    </div>
+                    <div class="form-group">
+                        <label for="admin-zone-id">GigaPub Zone ID</label>
+                        <input type="text" id="admin-zone-id">
+                    </div>
+                    <div class="form-group">
+                        <label for="admin-payment-methods">Payment Methods (comma-separated)</label>
+                        <input type="text" id="admin-payment-methods" placeholder="e.g., Bkash,Recharge,Nagad">
+                    </div>
+                    <hr style="margin: 20px 0; border: 1px solid #eee;">
+                    <div class="form-group">
+                        <label for="admin-new-password">New Admin Password (optional)</label>
+                        <input type="password" id="admin-new-password" placeholder="Leave blank to keep current">
+                    </div>
+                    <button class="btn btn-primary" id="admin-save-btn">Save Settings</button>
+                </div>
+            </div>
+
+        </main>
+
+        <footer class="bottom-nav">
+            <div class="nav-item active" data-page="home-page">
+                <i class="fa-solid fa-house"></i>
+                <span>Home</span>
+            </div>
+            <div class="nav-item" data-page="earn-page">
+                <i class="fa-solid fa-dollar-sign"></i>
+                <span>Earn</span>
+            </div>
+             <div class="nav-item" data-page="referral-page">
+                <i class="fa-solid fa-users"></i>
+                <span>Refer</span>
+            </div>
+            <div class="nav-item" data-page="withdraw-page">
+                <i class="fa-solid fa-droplet"></i>
+                <span>Withdraw</span>
+            </div>
+            <div class="nav-item" data-page="profile-page">
+                <i class="fa-solid fa-user"></i>
+                <span>Profile</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        // --- Configuration ---
+        const defaultAdminConfig = {
+            BOT_TOKEN: "8392680888:AAF4U5fP1-LePnp4Zw0kQdlLiX9F1ZIg0ZE",
+            ADMIN_CHAT_ID: "7829035852",
+            BOT_USERNAME: "gigapubnew_bot",
+            CHANNEL_LINK: "https://t.me/YourChannel",
+            GROUP_LINK: "https://t.me/earnbd_hmfa",
+            DAILY_AD_LIMIT: 40,
+            POINTS_PER_AD: 100,
+            MIN_WITHDRAW_POINTS: 20,
+            MAX_WITHDRAW_POINTS: 5000,
+            GIGA_ZONE_ID: "3232",
+            PAYMENT_METHODS: ["Bkash", "Recharge"],
+            ADMIN_PASSWORD: "5050"
+        };
+        
+        let adminConfig = {};
+        let userData = {};
+
+        // --- State Management ---
+        function loadAdminConfig() {
+            const savedConfig = localStorage.getItem('adminConfig');
+            adminConfig = savedConfig ? JSON.parse(savedConfig) : { ...defaultAdminConfig };
+        }
+
+        function saveAdminConfig() {
+            localStorage.setItem('adminConfig', JSON.stringify(adminConfig));
+            alert('Settings saved successfully!');
+            loadGigaPubSDK(); // Reload SDK if Zone ID changed
+        }
+
+        function loadUserData() {
+            const savedData = localStorage.getItem('userData');
+            const defaultUserData = {
+                balance: 0,
+                totalEarnings: 0,
+                adsWatchedToday: 0,
+                lastAdWatchDate: new Date().toDateString(),
+                totalAdsWatched: 0,
+                totalReferrals: 0,
+            };
+            userData = savedData ? JSON.parse(savedData) : defaultUserData;
+
+            // Reset daily ad count if it's a new day
+            if (new Date().toDateString() !== userData.lastAdWatchDate) {
+                userData.adsWatchedToday = 0;
+                userData.lastAdWatchDate = new Date().toDateString();
+                saveUserData();
+            }
+        }
+
+        function saveUserData() {
+            localStorage.setItem('userData', JSON.stringify(userData));
+        }
+
+        // --- Dynamic GigaPub SDK Loader ---
+        function loadGigaPubSDK() {
+            // Remove existing SDK if it exists
+            const existingScript = document.getElementById('giga-sdk');
+            if (existingScript) {
+                existingScript.remove();
+            }
+            // Add new script
+            const script = document.createElement('script');
+            script.id = 'giga-sdk';
+            script.src = `https://ad.gigapub.tech/script?id=${adminConfig.GIGA_ZONE_ID}`;
+            document.head.appendChild(script);
+        }
+
+        // --- UI Update Functions ---
+        function updateUI() {
+            const formatBDT = (amount) => `BDT ${amount.toFixed(2)}`;
+
+            // Headers
+            document.getElementById('header-user-balance').textContent = formatBDT(userData.balance);
+            
+            // Home Page
+            document.getElementById('home-total-earnings').textContent = userData.totalEarnings.toFixed(2);
+            document.getElementById('home-ads-watched').textContent = userData.totalAdsWatched;
+
+            // Earn Page
+            document.getElementById('ads-completed').textContent = userData.adsWatchedToday;
+            document.getElementById('ads-remaining').textContent = Math.max(0, adminConfig.DAILY_AD_LIMIT - userData.adsWatchedToday);
+
+            // Withdraw Page
+            document.getElementById('withdraw-balance').value = formatBDT(userData.balance);
+            const withdrawSelect = document.getElementById('withdrawal-method');
+            withdrawSelect.innerHTML = '';
+            adminConfig.PAYMENT_METHODS.forEach(method => {
+                const option = document.createElement('option');
+                option.value = method;
+                option.textContent = method;
+                withdrawSelect.appendChild(option);
+            });
+            document.getElementById('withdrawal-amount').placeholder = `Min ${adminConfig.MIN_WITHDRAW_POINTS} BDT`;
+            
+            // Profile Page
+            document.getElementById('profile-balance').textContent = formatBDT(userData.balance);
+            document.getElementById('profile-total-earnings').textContent = formatBDT(userData.totalEarnings);
+            document.getElementById('profile-ads-watched').textContent = userData.totalAdsWatched;
+            document.getElementById('profile-total-referrals').textContent = userData.totalReferrals;
+            
+            // Referral Page
+            document.getElementById('total-referrals-display').textContent = userData.totalReferrals;
+        }
+
+        function setupUserInfo() {
+            try {
+                const user = tg.initDataUnsafe.user;
+                if (user) {
+                    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+                    const username = user.username ? `@${user.username}` : `ID: ${user.id}`;
+                    
+                    document.getElementById('header-user-name').textContent = fullName;
+                    document.getElementById('home-user-name').textContent = user.first_name || 'User';
+                    document.getElementById('profile-page-name').textContent = fullName;
+                    document.getElementById('profile-page-handle').textContent = username;
+
+                    if (user.photo_url) {
+                        document.getElementById('header-profile-pic').src = user.photo_url;
+                        document.getElementById('profile-page-pic').src = user.photo_url;
+                    }
+                    
+                    // Setup referral link
+                    const referralLink = `https://t.me/${adminConfig.BOT_USERNAME}?start=${user.id}`;
+                    document.getElementById('referral-link-input').value = referralLink;
+                }
+            } catch (e) {
+                console.error("Could not get user data from Telegram:", e);
+                document.getElementById('header-user-name').textContent = "Guest User";
+                document.getElementById('home-user-name').textContent = "User";
+            }
+        }
+
+        // --- Page Navigation ---
+        const pages = document.querySelectorAll('.page');
+        const navItems = document.querySelectorAll('.nav-item');
+
+        function showPage(pageId) {
+            pages.forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+
+            navItems.forEach(item => {
+                item.classList.toggle('active', item.dataset.page === pageId);
+            });
+        }
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => showPage(item.dataset.page));
+        });
+        
+        document.getElementById('start-growing-btn').addEventListener('click', () => showPage('earn-page'));
+
+        // --- Core Functionality ---
+
+        // Watch Ad
+        document.getElementById('watch-ad-btn').addEventListener('click', () => {
+            if (userData.adsWatchedToday >= adminConfig.DAILY_AD_LIMIT) {
+                tg.showAlert('You have reached your daily ad limit. Please come back tomorrow.');
+                return;
+            }
+
+            const watchAdBtn = document.getElementById('watch-ad-btn');
+            watchAdBtn.disabled = true;
+            watchAdBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading Ad...';
+
+            window.showGiga()
+                .then(() => {
+                    const reward = parseFloat(adminConfig.POINTS_PER_AD);
+                    userData.balance += reward;
+                    userData.totalEarnings += reward;
+                    userData.adsWatchedToday++;
+                    userData.totalAdsWatched++;
+                    saveUserData();
+                    updateUI();
+                    tg.HapticFeedback.notificationOccurred('success');
+                    tg.showPopup({
+                        title: 'Success!',
+                        message: `You have earned ${reward.toFixed(2)} BDT.`,
+                        buttons: [{type: 'ok'}]
+                    });
+                })
+                .catch(e => {
+                    console.error("Ad error:", e);
+                    tg.showAlert('Ad could not be loaded. Please try again.');
+                })
+                .finally(() => {
+                    watchAdBtn.disabled = false;
+                    watchAdBtn.innerHTML = '<i class="fa-solid fa-play"></i> Watch Ad';
+                });
+        });
+
+        // Withdrawal
+        document.getElementById('request-withdrawal-btn').addEventListener('click', () => {
+            const amount = parseFloat(document.getElementById('withdrawal-amount').value);
+            const method = document.getElementById('withdrawal-method').value;
+            const account = document.getElementById('withdrawal-account').value;
+
+            if (!amount || !method || !account) {
+                tg.showAlert('Please fill in all fields.');
+                return;
+            }
+            if (amount < adminConfig.MIN_WITHDRAW_POINTS) {
+                tg.showAlert(`Minimum withdrawal amount is ${adminConfig.MIN_WITHDRAW_POINTS} BDT.`);
+                return;
+            }
+            if (amount > userData.balance) {
+                tg.showAlert("You don't have enough balance.");
+                return;
+            }
+            if (amount > adminConfig.MAX_WITHDRAW_POINTS) {
+                tg.showAlert(`Maximum withdrawal amount is ${adminConfig.MAX_WITHDRAW_POINTS} BDT.`);
+                return;
+            }
+
+            const user = tg.initDataUnsafe.user;
+            const message = `
+New Withdrawal Request!
+------------------------------------
+User: ${user.first_name || ''} ${user.last_name || ''}
+Username: @${user.username || 'N/A'}
+User ID: ${user.id}
+------------------------------------
+Amount: ${amount.toFixed(2)} BDT
+Method: ${method}
+Account: ${account}
+------------------------------------
+Please process this request.
+            `;
+            
+            const url = `https://api.telegram.org/bot${adminConfig.BOT_TOKEN}/sendMessage`;
+            fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    chat_id: adminConfig.ADMIN_CHAT_ID,
+                    text: message,
+                    parse_mode: 'Markdown'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    userData.balance -= amount;
+                    saveUserData();
+                    updateUI();
+                    tg.showAlert('Your withdrawal request has been sent successfully!');
+                    showPage('home-page');
+                } else {
+                    throw new Error(data.description);
+                }
+            })
+            .catch(error => {
+                console.error('Withdrawal error:', error);
+                tg.showAlert('Failed to send withdrawal request. Please contact support.');
+            });
+        });
+        
+        // Bonus & Other Buttons
+        document.getElementById('join-channel-btn').addEventListener('click', () => tg.openTelegramLink(adminConfig.CHANNEL_LINK));
+        document.getElementById('join-group-btn').addEventListener('click', () => tg.openTelegramLink(adminConfig.GROUP_LINK));
+        document.getElementById('contact-dev-btn').addEventListener('click', () => tg.openTelegramLink(`https://t.me/${tg.initDataUnsafe.user.username}`)); // Example, change to dev username
+        document.getElementById('copy-referral-btn').addEventListener('click', () => {
+            const link = document.getElementById('referral-link-input').value;
+            navigator.clipboard.writeText(link).then(() => {
+                tg.HapticFeedback.notificationOccurred('success');
+                alert('Referral link copied!');
+            });
+        });
+        document.getElementById('share-invitation-btn').addEventListener('click', () => {
+            const link = document.getElementById('referral-link-input').value;
+            const text = `Join me and start earning! 💰\n${link}`;
+            tg.switchInlineQuery(text);
+        });
+        document.getElementById('close-notice-btn').addEventListener('click', () => {
+            document.getElementById('update-notice-card').style.display = 'none';
+        });
+
+        // --- Admin Panel Logic ---
+        document.getElementById('settings-btn').addEventListener('click', () => showPage('admin-login-page'));
+
+        document.getElementById('admin-login-btn').addEventListener('click', () => {
+            const password = document.getElementById('admin-password').value;
+            if (password === adminConfig.ADMIN_PASSWORD) {
+                tg.HapticFeedback.notificationOccurred('success');
+                // Load current settings into admin panel form
+                document.getElementById('admin-task-limit').value = adminConfig.DAILY_AD_LIMIT;
+                document.getElementById('admin-task-reward').value = adminConfig.POINTS_PER_AD;
+                document.getElementById('admin-min-payout').value = adminConfig.MIN_WITHDRAW_POINTS;
+                document.getElementById('admin-max-payout').value = adminConfig.MAX_WITHDRAW_POINTS;
+                document.getElementById('admin-zone-id').value = adminConfig.GIGA_ZONE_ID;
+                document.getElementById('admin-payment-methods').value = adminConfig.PAYMENT_METHODS.join(',');
+                document.getElementById('admin-new-password').value = '';
+                showPage('admin-panel-page');
+            } else {
+                tg.HapticFeedback.notificationOccurred('error');
+                tg.showAlert('Incorrect password.');
+            }
+             document.getElementById('admin-password').value = '';
+        });
+
+        document.getElementById('admin-save-btn').addEventListener('click', () => {
+            adminConfig.DAILY_AD_LIMIT = parseInt(document.getElementById('admin-task-limit').value);
+            adminConfig.POINTS_PER_AD = parseFloat(document.getElementById('admin-task-reward').value);
+            adminConfig.MIN_WITHDRAW_POINTS = parseInt(document.getElementById('admin-min-payout').value);
+            adminConfig.MAX_WITHDRAW_POINTS = parseInt(document.getElementById('admin-max-payout').value);
+            adminConfig.GIGA_ZONE_ID = document.getElementById('admin-zone-id').value;
+            adminConfig.PAYMENT_METHODS = document.getElementById('admin-payment-methods').value.split(',').map(m => m.trim());
+            
+            const newPassword = document.getElementById('admin-new-password').value;
+            if (newPassword) {
+                adminConfig.ADMIN_PASSWORD = newPassword;
+            }
+            
+            saveAdminConfig();
+            updateUI();
+            showPage('profile-page'); // Go back to profile after saving
+        });
+
+
+        // --- Initial Load ---
+        loadAdminConfig();
+        loadGigaPubSDK();
+        loadUserData();
+        setupUserInfo();
+        updateUI();
+
+    });
+    </script>
+</body>
+</html>
