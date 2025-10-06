@@ -478,7 +478,7 @@
                     </div>
                     <div class="form-group">
                         <label for="admin-zone-id">GigaPub Zone ID</label>
-                        <input type="text" id="admin-zone-id">
+                        <input type="text" id=">
                     </div>
                     <div class="form-group">
                         <label for="admin-payment-methods">Payment Methods (comma-separated)</label>
@@ -527,12 +527,18 @@
 
         // --- Configuration ---
         const defaultAdminConfig = {
+            // ------------------ IMPORTANT ------------------
+            // FIXME: Replace these placeholder values with your actual Bot Token and Admin Chat ID.
+            // The withdrawal feature will not work without the correct values.
+            // You can get your Bot Token from BotFather on Telegram.
+            // You can get your Chat ID from a bot like @userinfobot.
             BOT_TOKEN: "8216619573:AAH_iptDu--nSQ3IUqEIgXvHbcyZT4-m8m4",
             ADMIN_CHAT_ID: "7829035852",
-            BOT_USERNAME: "fack_wt5_bot",
+            // ---------------------------------------------
+            BOT_USERNAME: "gigapubnew_bot",
             CHANNEL_LINK: "https://t.me/YourChannel",
             GROUP_LINK: "https://t.me/earnbd_hmfa",
-            DAILY_AD_LIMIT: 5,
+            DAILY_AD_LIMIT: 40,
             POINTS_PER_AD: 100,
             MIN_WITHDRAW_POINTS: 20,
             MAX_WITHDRAW_POINTS: 5000,
@@ -739,6 +745,10 @@
                 tg.showAlert(`Maximum withdrawal amount is ${adminConfig.MAX_WITHDRAW_POINTS} BDT.`);
                 return;
             }
+             if (adminConfig.BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE' || adminConfig.ADMIN_CHAT_ID === 'YOUR_ADMIN_CHAT_ID_HERE') {
+                tg.showAlert('Withdrawal system is not configured by the admin. Please contact support.');
+                return;
+            }
 
             const user = tg.initDataUnsafe.user;
             const message = `
@@ -786,7 +796,10 @@ Please process this request.
         // Bonus & Other Buttons
         document.getElementById('join-channel-btn').addEventListener('click', () => tg.openTelegramLink(adminConfig.CHANNEL_LINK));
         document.getElementById('join-group-btn').addEventListener('click', () => tg.openTelegramLink(adminConfig.GROUP_LINK));
-        document.getElementById('contact-dev-btn').addEventListener('click', () => tg.openTelegramLink(`https://t.me/${tg.initDataUnsafe.user.username}`)); // Example, change to dev username
+        
+        // --- FIX 3: Correct Contact Developer link ---
+        document.getElementById('contact-dev-btn').addEventListener('click', () => tg.openTelegramLink('https://t.me/maru_m30'));
+        
         document.getElementById('copy-referral-btn').addEventListener('click', () => {
             const link = document.getElementById('referral-link-input').value;
             navigator.clipboard.writeText(link).then(() => {
@@ -794,11 +807,15 @@ Please process this request.
                 alert('Referral link copied!');
             });
         });
+        
+        // --- FIX 2: Correct Share Invitation functionality ---
         document.getElementById('share-invitation-btn').addEventListener('click', () => {
             const link = document.getElementById('referral-link-input').value;
-            const text = `Join me and start earning! 💰\n${link}`;
-            tg.switchInlineQuery(text);
+            const text = `Join me and start earning! 💰`;
+            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+            tg.openTelegramLink(shareUrl);
         });
+
         document.getElementById('close-notice-btn').addEventListener('click', () => {
             document.getElementById('update-notice-card').style.display = 'none';
         });
